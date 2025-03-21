@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import sqlite3
 import re  # Para validação de expressões regulares
+import os
 
 class ListaFornecedoresApp:
     def __init__(self, usuario):
@@ -152,7 +153,7 @@ class ListaFornecedoresApp:
 
     def validar_nome_funcao(self, texto):
         """Valida se o nome ou função não contém números."""
-        return not any(char.isdigit() for char in texto)
+        return texto.replace(" ", "").isalpha() 
 
     def validar_telefone(self, telefone):
         """Valida se o telefone está no formato xxxx-xxxx ou xxxx-xxxxx."""
@@ -263,11 +264,17 @@ class ListaFornecedoresApp:
             self.label_status.config(text="Erro: A lista de fornecedores está vazia!")
             return
 
-        # Solicita ao usuário o local e nome do arquivo
+        # Define o nome padrão do arquivo e o diretório do desktop
+        desktop_path = os.path.expanduser("~/Desktop")  # Caminho para o desktop
+        default_filename = os.path.join(desktop_path, "lista_de_fornecedores.pdf")
+
+        # Solicita ao usuário o local e nome do arquivo (com o nome padrão pré-definido)
         pdf_filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf")],
-            title="Salvar Lista de Fornecedores"
+            title="Salvar Lista de Fornecedores",
+            initialfile=default_filename,  # Nome padrão do arquivo
+            initialdir=desktop_path  # Diretório inicial (desktop)
         )
 
         if not pdf_filename:  # Se o usuário cancelar
