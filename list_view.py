@@ -1,7 +1,8 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
 import sqlite3
+import re  # Para validação de expressões regulares
 
 class ListaFornecedoresApp:
     def __init__(self, usuario):
@@ -42,9 +43,9 @@ class ListaFornecedoresApp:
         self.entry_pesquisa = tk.Entry(frame_pesquisa, font=("Arial", 12), width=40)
         self.entry_pesquisa.pack(side="left", padx=10)
 
-        # Botão de pesquisa
-        tk.Button(frame_pesquisa, text="Pesquisar", font=("Arial", 12), command=self.pesquisar_fornecedor)\
-            .pack(side="left", padx=10)
+        # Botão de pesquisa com ícone "🔍"
+        tk.Button(frame_pesquisa, text="🔍", font=("Arial", 12), command=self.pesquisar_fornecedor)\
+            .pack(side="left")
 
         # Label de status (vermelho)
         self.label_status = tk.Label(self.root, text="", font=("Arial", 12), bg="#003366", fg="red")
@@ -72,6 +73,10 @@ class ListaFornecedoresApp:
         self.tree.heading("Função", text="Função")
         self.tree.heading("Telefone", text="Telefone")
         self.tree.pack(pady=10, padx=10, fill="both", expand=True)
+
+        # Centralizar o conteúdo da lista
+        for col in self.tree["columns"]:
+            self.tree.column(col, anchor="center")
 
         # Atualiza a data e hora
         self.atualizar_data_hora()
@@ -121,6 +126,19 @@ class ListaFornecedoresApp:
     def adicionar_fornecedor(self, nome, funcao, telefone, janela):
         """Adiciona um novo fornecedor ao banco de dados."""
         if nome and funcao and telefone:
+            # Validação do nome e função (não podem conter números)
+            if not self.validar_nome_funcao(nome):
+                self.label_status.config(text="Erro: O nome não pode conter números!")
+                return
+            if not self.validar_nome_funcao(funcao):
+                self.label_status.config(text="Erro: A função não pode conter números!")
+                return
+
+            # Validação do telefone (formato xxxx-xxxx ou xxxx-xxxxx)
+            if not self.validar_telefone(telefone):
+                self.label_status.config(text="Erro: Telefone deve estar no formato xxxx-xxxx ou xxxx-xxxxx!")
+                return
+
             cursor = self.conn.cursor()
             cursor.execute("INSERT INTO fornecedores (nome, funcao, telefone) VALUES (?, ?, ?)", 
                            (nome, funcao, telefone))
@@ -131,6 +149,14 @@ class ListaFornecedoresApp:
             janela.destroy()
         else:
             self.label_status.config(text="Erro: Preencha todos os campos!")
+
+    def validar_nome_funcao(self, texto):
+        """Valida se o nome ou função não contém números."""
+        return not any(char.isdigit() for char in texto)
+
+    def validar_telefone(self, telefone):
+        """Valida se o telefone está no formato xxxx-xxxx ou xxxx-xxxxx."""
+        return re.match(r"^\d{4}-\d{4,5}$", telefone) is not None
 
     def editar_fornecedor(self):
         """Edita um fornecedor selecionado."""
@@ -179,6 +205,19 @@ class ListaFornecedoresApp:
     def salvar_edicao(self, nome_antigo, nome_novo, funcao_novo, telefone_novo, janela):
         """Salva as alterações do fornecedor no banco de dados."""
         if nome_novo and funcao_novo and telefone_novo:
+            # Validação do nome e função (não podem conter números)
+            if not self.validar_nome_funcao(nome_novo):
+                self.label_status.config(text="Erro: O nome não pode conter números!")
+                return
+            if not self.validar_nome_funcao(funcao_novo):
+                self.label_status.config(text="Erro: A função não pode conter números!")
+                return
+
+            # Validação do telefone (formato xxxx-xxxx ou xxxx-xxxxx)
+            if not self.validar_telefone(telefone_novo):
+                self.label_status.config(text="Erro: Telefone deve estar no formato xxxx-xxxx ou xxxx-xxxxx!")
+                return
+
             cursor = self.conn.cursor()
             cursor.execute("UPDATE fornecedores SET nome = ?, funcao = ?, telefone = ? WHERE nome = ?", 
                            (nome_novo, funcao_novo, telefone_novo, nome_antigo))
@@ -224,11 +263,20 @@ class ListaFornecedoresApp:
             self.label_status.config(text="Erro: A lista de fornecedores está vazia!")
             return
 
+        # Solicita ao usuário o local e nome do arquivo
+        pdf_filename = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF Files", "*.pdf")],
+            title="Salvar Lista de Fornecedores"
+        )
+
+        if not pdf_filename:  # Se o usuário cancelar
+            return
+
         from reportlab.lib.pagesizes import letter
         from reportlab.pdfgen import canvas
 
         # Cria o arquivo PDF
-        pdf_filename = "lista_fornecedores.pdf"
         c = canvas.Canvas(pdf_filename, pagesize=letter)
         c.setFont("Helvetica", 12)
 
@@ -265,6 +313,7 @@ class ListaFornecedoresApp:
         data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
         self.label_data_hora.config(text=data_hora)
         self.root.after(1000, self.atualizar_data_hora)
+
 
     def abrir_janela_adicionar(self):
         """Abre uma janela para adicionar um novo fornecedor."""
