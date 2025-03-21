@@ -30,6 +30,22 @@ class ListaFornecedoresApp:
         tk.Label(frame_data_usuario, text=f"Usuário: {usuario}", font=("Arial", 14), bg="#003366", fg="white")\
             .pack(side="left", padx=10)
 
+        # Título "LISTA DE FUNCIONÁRIOS"
+        tk.Label(self.root, text="LISTA DE FUNCIONÁRIOS", font=("Arial", 24, "bold"), bg="#003366", fg="white")\
+            .pack(pady=10)
+
+        # Frame para a barra de pesquisa
+        frame_pesquisa = tk.Frame(self.root, bg="#003366")
+        frame_pesquisa.pack(pady=10, fill="x")
+
+        # Campo de pesquisa
+        self.entry_pesquisa = tk.Entry(frame_pesquisa, font=("Arial", 12), width=40)
+        self.entry_pesquisa.pack(side="left", padx=10)
+
+        # Botão de pesquisa
+        tk.Button(frame_pesquisa, text="Pesquisar", font=("Arial", 12), command=self.pesquisar_fornecedor)\
+            .pack(side="left", padx=10)
+
         # Label de status (vermelho)
         self.label_status = tk.Label(self.root, text="", font=("Arial", 12), bg="#003366", fg="red")
         self.label_status.pack(pady=5)
@@ -64,6 +80,24 @@ class ListaFornecedoresApp:
         self.atualizar_treeview()
 
         self.root.mainloop()
+
+    def pesquisar_fornecedor(self):
+        """Filtra a lista de fornecedores com base no termo de pesquisa."""
+        termo = self.entry_pesquisa.get().lower()  # Converte o termo para minúsculas
+        if termo:
+            # Filtra os fornecedores que contêm o termo no nome, função ou telefone
+            resultados = [
+                fornecedor for fornecedor in self.fornecedores
+                if termo in fornecedor[0].lower() or  # Nome
+                   termo in fornecedor[1].lower() or  # Função
+                   termo in fornecedor[2].lower()     # Telefone
+            ]
+            self.atualizar_treeview(resultados)
+            self.label_status.config(text=f"{len(resultados)} resultado(s) encontrado(s).")
+        else:
+            # Se o campo de pesquisa estiver vazio, exibe todos os fornecedores
+            self.atualizar_treeview(self.fornecedores)
+            self.label_status.config(text="Digite um termo para pesquisar.")
 
     def criar_tabela(self):
         """Cria a tabela de fornecedores se não existir."""
@@ -219,10 +253,11 @@ class ListaFornecedoresApp:
         c.save()
         self.label_status.config(text=f"Lista de fornecedores salva em {pdf_filename}")
 
-    def atualizar_treeview(self):
+    def atualizar_treeview(self, fornecedores=None):
         """Atualiza a Treeview com os fornecedores."""
         self.tree.delete(*self.tree.get_children())
-        for fornecedor in self.fornecedores:
+        fornecedores = fornecedores if fornecedores is not None else self.fornecedores
+        for fornecedor in fornecedores:
             self.tree.insert("", "end", values=fornecedor)
 
     def atualizar_data_hora(self):
