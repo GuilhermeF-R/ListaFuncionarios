@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 class ListaFornecedoresApp:
     def __init__(self, usuario):
@@ -37,6 +39,8 @@ class ListaFornecedoresApp:
             tk.Button(self.frame_botoes, text="Deletar", font=("Arial", 12), command=self.deletar_fornecedor)\
                 .pack(side="right", padx=5)
         tk.Button(self.frame_botoes, text="Imprimir", font=("Arial", 12), command=self.imprimir_lista)\
+            .pack(side="right", padx=5)
+        tk.Button(self.frame_botoes, text="Baixar Lista", font=("Arial", 12), command=self.baixar_lista_pdf)\
             .pack(side="right", padx=5)
 
         # Treeview para exibir a lista de fornecedores
@@ -118,6 +122,38 @@ class ListaFornecedoresApp:
     def imprimir_lista(self):
         """Simula a impressão da lista."""
         messagebox.showinfo("Imprimir", "Lista de fornecedores impressa com sucesso!")
+
+    def baixar_lista_pdf(self):
+        """Gera um PDF com a lista de fornecedores."""
+        if not self.fornecedores:
+            messagebox.showwarning("Aviso", "A lista de fornecedores está vazia!")
+            return
+
+        # Cria o arquivo PDF
+        pdf_filename = "lista_fornecedores.pdf"
+        c = canvas.Canvas(pdf_filename, pagesize=letter)
+        c.setFont("Helvetica", 12)
+
+        # Título do PDF
+        c.drawString(100, 750, "Lista de Fornecedores")
+
+        # Cabeçalho da tabela
+        c.drawString(100, 730, "Nome")
+        c.drawString(300, 730, "Função")
+        c.drawString(450, 730, "Telefone")
+
+        # Conteúdo da tabela
+        y = 710
+        for fornecedor in self.fornecedores:
+            nome, funcao, telefone = fornecedor
+            c.drawString(100, y, nome)
+            c.drawString(300, y, funcao)
+            c.drawString(450, y, telefone)
+            y -= 20  # Espaçamento entre linhas
+
+        # Finaliza o PDF
+        c.save()
+        messagebox.showinfo("Sucesso", f"Lista de fornecedores salva em {pdf_filename}")
 
     def atualizar_treeview(self):
         """Atualiza a Treeview com os fornecedores."""
