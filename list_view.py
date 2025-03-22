@@ -87,6 +87,22 @@ class ListaFornecedoresApp:
 
         self.root.mainloop()
 
+    def formatar_telefone(self, event):
+        """Formata o telefone automaticamente no formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx."""
+        entry = event.widget
+        texto = entry.get().replace("(", "").replace(")", "").replace(" ", "").replace("-", "")  # Remove formatação existente
+        novo_texto = ""
+
+        if len(texto) > 0:
+            novo_texto += f"({texto[:2]}"  # Adiciona os dois primeiros dígitos entre parênteses
+        if len(texto) > 2:
+            novo_texto += f") {texto[2:6]}"  # Adiciona espaço e os próximos 4 dígitos
+        if len(texto) > 6:
+            novo_texto += f"-{texto[6:]}"  # Adiciona hífen e os dígitos restantes
+
+        entry.delete(0, tk.END)
+        entry.insert(0, novo_texto)
+
     def pesquisar_fornecedor(self):
         """Filtra a lista de fornecedores com base no termo de pesquisa."""
         termo = self.entry_pesquisa.get().lower()  # Converte o termo para minúsculas
@@ -135,9 +151,9 @@ class ListaFornecedoresApp:
                 self.label_status.config(text="Erro: A função não pode conter números!")
                 return
 
-            # Validação do telefone (formato xxxx-xxxx ou xxxx-xxxxx)
+            # Validação do telefone (formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx)
             if not self.validar_telefone(telefone):
-                self.label_status.config(text="Erro: Telefone deve estar no formato xxxx-xxxx ou xxxx-xxxxx!")
+                self.label_status.config(text="Erro: Telefone deve estar no formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx!")
                 return
 
             cursor = self.conn.cursor()
@@ -156,8 +172,8 @@ class ListaFornecedoresApp:
         return texto.replace(" ", "").isalpha() 
 
     def validar_telefone(self, telefone):
-        """Valida se o telefone está no formato xxxx-xxxx ou xxxx-xxxxx."""
-        return re.match(r"^\d{4}-\d{4,5}$", telefone) is not None
+        """Valida se o telefone está no formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx."""
+        return re.match(r"^\(\d{2}\) \d{4,5}-\d{4}$", telefone) is not None
 
     def editar_fornecedor(self):
         """Edita um fornecedor selecionado."""
@@ -187,6 +203,7 @@ class ListaFornecedoresApp:
         entry_telefone = tk.Entry(janela_editar, font=("Arial", 12))
         entry_telefone.insert(0, telefone)
         entry_telefone.grid(row=1, column=1, padx=10, pady=10)
+        entry_telefone.bind("<KeyRelease>", self.formatar_telefone)  # Formata o telefone automaticamente
 
         tk.Label(janela_editar, text="Função:", font=("Arial", 12), bg="#003366", fg="white")\
             .grid(row=2, column=0, padx=10, pady=10)
@@ -214,9 +231,9 @@ class ListaFornecedoresApp:
                 self.label_status.config(text="Erro: A função não pode conter números!")
                 return
 
-            # Validação do telefone (formato xxxx-xxxx ou xxxx-xxxxx)
+            # Validação do telefone (formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx)
             if not self.validar_telefone(telefone_novo):
-                self.label_status.config(text="Erro: Telefone deve estar no formato xxxx-xxxx ou xxxx-xxxxx!")
+                self.label_status.config(text="Erro: Telefone deve estar no formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx!")
                 return
 
             cursor = self.conn.cursor()
@@ -321,7 +338,6 @@ class ListaFornecedoresApp:
         self.label_data_hora.config(text=data_hora)
         self.root.after(1000, self.atualizar_data_hora)
 
-
     def abrir_janela_adicionar(self):
         """Abre uma janela para adicionar um novo fornecedor."""
         janela_adicionar = tk.Toplevel(self.root)
@@ -338,6 +354,7 @@ class ListaFornecedoresApp:
             .grid(row=1, column=0, padx=10, pady=10)
         entry_telefone = tk.Entry(janela_adicionar, font=("Arial", 12))
         entry_telefone.grid(row=1, column=1, padx=10, pady=10)
+        entry_telefone.bind("<KeyRelease>", self.formatar_telefone)  # Formata o telefone automaticamente
 
         tk.Label(janela_adicionar, text="Função:", font=("Arial", 12), bg="#003366", fg="white")\
             .grid(row=2, column=0, padx=10, pady=10)
@@ -352,4 +369,3 @@ class ListaFornecedoresApp:
         tk.Button(janela_adicionar, text="Adicionar", font=("Arial", 12),
                   command=lambda: self.adicionar_fornecedor(entry_nome.get(), combo_funcao.get(), entry_telefone.get(), janela_adicionar))\
             .grid(row=3, column=0, columnspan=2, pady=10)
-            
