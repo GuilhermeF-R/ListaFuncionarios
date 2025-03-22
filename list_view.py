@@ -4,6 +4,7 @@ from datetime import datetime
 import sqlite3
 import re  # Para validação de expressões regulares
 import os
+import subprocess  # Para abrir o PDF automaticamente
 
 class ListaFornecedoresApp:
     def __init__(self, usuario):
@@ -100,6 +101,10 @@ class ListaFornecedoresApp:
         if len(texto) > 6:
             novo_texto += f"-{texto[6:]}"  # Adiciona hífen e os dígitos restantes
 
+        # Limita o número de caracteres
+        if len(novo_texto) > 15:  # (xx) xxxxx-xxxx tem 15 caracteres
+            novo_texto = novo_texto[:15]
+
         entry.delete(0, tk.END)
         entry.insert(0, novo_texto)
 
@@ -173,7 +178,7 @@ class ListaFornecedoresApp:
 
     def validar_telefone(self, telefone):
         """Valida se o telefone está no formato (xx) xxxx-xxxx ou (xx) xxxxx-xxxx."""
-        return re.match(r"^\(\d{2}\) \d{4,5}-\d{4}$", telefone) is not None
+        return re.match(r"^\(\d{2}\) \d{4}-\d{4,5}$", telefone) is not None
 
     def editar_fornecedor(self):
         """Edita um fornecedor selecionado."""
@@ -295,6 +300,7 @@ class ListaFornecedoresApp:
         )
 
         if not pdf_filename:  # Se o usuário cancelar
+            self.label_status.config(text="Baixar PDF cancelado pelo usuário.")
             return
 
         from reportlab.lib.pagesizes import letter
@@ -323,6 +329,10 @@ class ListaFornecedoresApp:
 
         # Finaliza o PDF
         c.save()
+
+        # Abre o PDF automaticamente
+        subprocess.Popen([pdf_filename], shell=True)
+
         self.label_status.config(text=f"Lista de fornecedores salva em {pdf_filename}")
 
     def atualizar_treeview(self, fornecedores=None):
